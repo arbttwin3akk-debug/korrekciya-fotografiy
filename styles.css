@@ -33,6 +33,10 @@ body {
   padding: 0 1.25rem;
 }
 
+.wrap-wide {
+  max-width: 900px;
+}
+
 /* Header */
 .topbar {
   background: var(--surface);
@@ -240,6 +244,124 @@ body {
   padding: 0.75rem;
   background: var(--bg);
   border-radius: var(--radius);
+}
+
+/* Коррекция: превью + ползунки */
+.layout-correction {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .layout-correction {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.preview-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.preview-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.preview-frame {
+  position: relative;
+  background: var(--bg);
+  border-radius: var(--radius);
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.preview-frame img {
+  max-width: 100%;
+  max-height: 360px;
+  width: auto;
+  height: auto;
+  display: none;
+  vertical-align: middle;
+}
+
+.preview-frame img.preview-img-visible {
+  display: block;
+}
+
+.preview-placeholder {
+  margin: 0;
+  padding: 2rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.slider-row {
+  margin-bottom: 1.25rem;
+}
+
+.slider-row label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+
+.slider-value {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.slider-row input[type="range"] {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--primary);
+}
+
+.status-line {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  padding: 0.75rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-row .btn-primary {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.65rem 1rem;
+}
+
+.params-note-small {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.help-block code {
+  font-size: 0.8em;
+  background: var(--bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
 }
 
 /* Footer */
