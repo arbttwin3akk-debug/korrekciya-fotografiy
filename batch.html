@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Пакетная коррекция: папка-источник и папка для обработанных фото." />
+  <title>Папки — Коррекция фотографий</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="index.html">Коррекция фотографий</a>
+      <nav class="topnav">
+        <a href="index.html">Главная</a>
+        <a href="batch.html">Папки</a>
+        <a href="help.html">Справка</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="batch-main">
+    <div class="wrap wrap-wide">
+      <h1 class="page-heading">Папки</h1>
+      <p class="page-sub">Выберите <strong>папку-источник</strong> (откуда брать фото) и <strong>папку-результат</strong> (куда сохранять обработанные). Коррекция применяется ко всем изображениям. Работает в Chrome и Edge; требует HTTPS или localhost.</p>
+
+      <div class="folder-cards">
+        <div class="folder-card">
+          <h2 class="folder-title">Папка-источник</h2>
+          <p class="folder-desc">Отсюда берутся фотографии для коррекции</p>
+          <button type="button" class="btn btn-primary" id="btn-src">Выбрать папку</button>
+          <p class="folder-path" id="src-path">—</p>
+        </div>
+        <div class="folder-card">
+          <h2 class="folder-title">Папка-результат</h2>
+          <p class="folder-desc">Сюда сохраняются обработанные фото</p>
+          <button type="button" class="btn btn-primary" id="btn-dst">Выбрать папку</button>
+          <p class="folder-path" id="dst-path">—</p>
+        </div>
+      </div>
+
+      <section class="params">
+        <h2 class="params-title">Параметры коррекции</h2>
+        <div class="slider-row">
+          <label for="b">Яркость <span class="slider-value" id="b-val">100</span>%</label>
+          <input type="range" id="b" min="50" max="150" value="100" />
+        </div>
+        <div class="slider-row">
+          <label for="c">Контрастность <span class="slider-value" id="c-val">100</span>%</label>
+          <input type="range" id="c" min="50" max="150" value="100" />
+        </div>
+        <div class="slider-row">
+          <label for="s">Цветность <span class="slider-value" id="s-val">100</span>%</label>
+          <input type="range" id="s" min="0" max="200" value="100" />
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary btn-download" id="btn-process">Обработать</button>
+        </div>
+        <div class="status-line" id="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span>© <span id="year"></span> — коррекция фотографий</span>
+      <a href="index.html">Главная</a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var srcHandle = null, dstHandle = null;
+      var b = document.getElementById('b'), c = document.getElementById('c'), s = document.getElementById('s');
+      var bVal = document.getElementById('b-val'), cVal = document.getElementById('c-val'), sVal = document.getElementById('s-val');
+      var status = document.getElementById('status');
+
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      function updateLabels() {
+        bVal.textContent = b.value;
+        cVal.textContent = c.value;
+        sVal.textContent = s.value;
+      }
+      [b, c, s].forEach(function (el) { el.addEventListener('input', updateLabels); });
+
+      if (!('showDirectoryPicker' in window)) {
+        document.getElementById('btn-src').disabled = true;
+        document.getElementById('btn-dst').disabled = true;
+        document.getElementById('btn-process').disabled = true;
+        status.textContent = 'Выбор папок недоступен. Используйте Chrome или Edge (https).';
+      }
+
+      document.getElementById('btn-src').addEventListener('click', async function () {
+        try {
+          srcHandle = await window.showDirectoryPicker({ mode: 'read' });
+          document.getElementById('src-path').textContent = srcHandle.name;
+          status.textContent = 'Источник: ' + srcHandle.name;
+        } catch (err) {
+          if (err.name !== 'AbortError') status.textContent = 'Ошибка: ' + err.message;
+        }
+      });
+
+      document.getElementById('btn-dst').addEventListener('click', async function () {
+        try {
+          dstHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          document.getElementById('dst-path').textContent = dstHandle.name;
+          status.textContent = 'Результат: ' + dstHandle.name;
+        } catch (err) {
+          if (err.name !== 'AbortError') status.textContent = 'Ошибка: ' + err.message;
+        }
+      });
+
+      var IMG_EXTS = /\.(jpe?g|png|webp|bmp)$/i;
+
+      async function* listImages(dirHandle) {
+        for await (var entry of dirHandle.values()) {
+          if (entry.kind === 'file' && IMG_EXTS.test(entry.name))
+            yield entry;
+          if (entry.kind === 'directory') {
+            yield* listImages(entry);
+          }
+        }
+      }
+
+      function processImage(file, filter) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          var url = URL.createObjectURL(file);
+          img.onload = function () {
+            URL.revokeObjectURL(url);
+            var canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            var ctx = canvas.getContext('2d');
+            ctx.filter = filter;
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+          };
+          img.onerror = function () { URL.revokeObjectURL(url); reject(); };
+          img.src = url;
+        });
+      }
+
+      document.getElementById('btn-process').addEventListener('click', async function () {
+        if (!srcHandle || !dstHandle) {
+          status.textContent = 'Сначала выберите обе папки.';
+          return;
+        }
+        var filter = 'brightness(' + (b.value / 100) + ') contrast(' + (c.value / 100) + ') saturate(' + (s.value / 100) + ')';
+        var count = 0, err = 0;
+        status.textContent = 'Обработка…';
+        try {
+          for await (const fileHandle of listImages(srcHandle)) {
+            try {
+              var file = await fileHandle.getFile();
+              var blob = await processImage(file, filter);
+              var base = file.name.replace(/\.[^.]+$/, '') || 'foto';
+              var outName = base + '.png';
+              var outFile = await dstHandle.getFileHandle(outName, { create: true });
+              var writable = await outFile.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              count++;
+              status.textContent = 'Обработано: ' + count + '…';
+            } catch (e) {
+              err++;
+            }
+          }
+          status.textContent = 'Готово: ' + count + ' фото сохранено. Ошибок: ' + err;
+        } catch (e) {
+          status.textContent = 'Ошибка: ' + e.message;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
