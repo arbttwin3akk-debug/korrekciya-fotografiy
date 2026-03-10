@@ -1,6 +1,5 @@
-# Повторный деплой на Cloudflare Pages при push в main.
-# Один раз в настройках репозитория: Settings → Secrets → CLOUDFLARE_API_TOKEN
-# (Workers & Pages → API Tokens → Create with Edit Cloudflare Workers шаблон)
+# Cloudflare Pages — без VPN часто не открывается; основной вход см. GitHub Pages workflow.
+# Секрет CLOUDFLARE_API_TOKEN — по желанию; без него job пропускается.
 name: Deploy to Cloudflare Pages
 
 on:
@@ -9,6 +8,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
