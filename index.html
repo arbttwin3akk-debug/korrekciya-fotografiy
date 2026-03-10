@@ -74,6 +74,7 @@
           <div class="btn-row">
             <button type="button" class="btn btn-secondary" id="btn-reset">Сбросить</button>
             <button type="button" class="btn btn-primary" id="btn-apply">Применить коррекцию</button>
+            <button type="button" class="btn btn-download" id="btn-download">Скачать</button>
           </div>
           <p class="params-note params-note-small">ИИ анализирует яркость, контраст и насыщенность по гистограмме и подбирает коррекцию. «Применить» фиксирует результат.</p>
         </section>
@@ -104,6 +105,7 @@
       var saturateVal = document.getElementById('saturate-val');
       var statusLine = document.getElementById('status-line');
       var objectUrl = null;
+      var currentFileName = 'foto';
 
       document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -130,6 +132,7 @@
         var previewInner = document.getElementById('preview-inner');
         if (previewInner) previewInner.classList.add('preview-inner-visible');
         fileName.textContent = file.name;
+        currentFileName = file.name.replace(/\.[^.]+$/, '') || 'foto';
         lastAnalyzedFile = null;
         document.getElementById('auto-hint').textContent = 'Нажмите «Авто (ИИ)» — параметры подберутся автоматически';
         updateFilter();
@@ -217,7 +220,30 @@
           statusLine.textContent = 'Сначала выберите фотографию.';
           return;
         }
-        statusLine.textContent = 'Коррекция зафиксирована: яркость ' + brightness.value + '%, контраст ' + contrast.value + '%, цветность ' + saturate.value + '%. (Демо — без сохранения на сервер.)';
+        statusLine.textContent = 'Коррекция зафиксирована: яркость ' + brightness.value + '%, контраст ' + contrast.value + '%, цветность ' + saturate.value + '%';
+      });
+
+      document.getElementById('btn-download').addEventListener('click', function () {
+        if (!previewImg.src || !previewImg.complete || previewImg.naturalWidth === 0) {
+          statusLine.textContent = 'Сначала загрузите фотографию.';
+          return;
+        }
+        var b = brightness.value / 100, c = contrast.value / 100, s = saturate.value / 100;
+        var canvas = document.createElement('canvas');
+        canvas.width = previewImg.naturalWidth;
+        canvas.height = previewImg.naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.filter = 'brightness(' + b + ') contrast(' + c + ') saturate(' + s + ')';
+        ctx.drawImage(previewImg, 0, 0);
+        canvas.toBlob(function (blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'korrektirovka-' + currentFileName + '.png';
+          a.click();
+          URL.revokeObjectURL(url);
+          statusLine.textContent = 'Скачано. Файл: korrektirovka-*.png';
+        }, 'image/png');
       });
     })();
   </script>
