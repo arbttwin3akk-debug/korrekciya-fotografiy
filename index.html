@@ -172,7 +172,6 @@
       function downloadOne(idx) {
         var item = images[idx];
         var img = new Image();
-        img.crossOrigin = 'anonymous';
         img.onload = function () {
           var b = brightness.value / 100, c = contrast.value / 100, s = saturate.value / 100;
           var canvas = document.createElement('canvas');
