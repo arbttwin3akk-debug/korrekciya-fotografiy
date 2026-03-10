@@ -507,6 +507,24 @@ body {
   word-break: break-all;
 }
 
+.help-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.help-section-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.help-section .help-block h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--border);
