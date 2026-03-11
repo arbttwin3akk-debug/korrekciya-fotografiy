@@ -26,6 +26,59 @@
   <main class="batch-main">
     <div class="wrap wrap-wide">
       <h1 class="page-heading">Коррекция фотографий</h1>
+
+      <nav class="tabs">
+        <button type="button" class="tab-btn tab-active" data-tab="single">Одно фото</button>
+        <button type="button" class="tab-btn" data-tab="batch">Папки</button>
+      </nav>
+
+      <!-- Вкладка: Одно фото -->
+      <div class="tab-pane tab-active" id="pane-single">
+        <p class="page-sub">Вставьте или загрузите одно фото, настройте параметры и сразу увидите результат «до» и «после».</p>
+        <div class="single-upload">
+          <div class="dropzone dropzone-single" id="dropzone-single">
+            <span class="dropzone-icon">📷</span>
+            <div class="dropzone-title">Перетащите фото сюда или вставьте из буфера (Ctrl+V)</div>
+            <div class="dropzone-hint">JPG, PNG, WebP, BMP</div>
+            <input type="file" id="file-single" accept="image/jpeg,image/png,image/webp,image/bmp" hidden />
+          </div>
+        </div>
+        <div class="before-after-wrap">
+          <div class="before-after-box">
+            <span class="before-after-label before-label">До</span>
+            <div class="preview-frame preview-before"><span class="preview-placeholder" id="ph-before">Загрузите фото</span><img id="img-before" alt="До" /></div>
+          </div>
+          <div class="before-after-box">
+            <span class="before-after-label after-label">После</span>
+            <div class="preview-frame preview-after"><span class="preview-placeholder" id="ph-after">—</span><img id="img-after" alt="После" /></div>
+          </div>
+        </div>
+        <section class="params params-single">
+          <h2 class="params-title">Параметры коррекции</h2>
+          <div class="btn-row btn-row-top">
+            <button type="button" class="btn btn-primary" id="btn-auto-single">Авто (ИИ)</button>
+          </div>
+          <div class="slider-row">
+            <label for="b-single">Яркость <span class="slider-value" id="b-val-single">100</span>%</label>
+            <input type="range" id="b-single" min="50" max="150" value="100" />
+          </div>
+          <div class="slider-row">
+            <label for="c-single">Контрастность <span class="slider-value" id="c-val-single">100</span>%</label>
+            <input type="range" id="c-single" min="50" max="150" value="100" />
+          </div>
+          <div class="slider-row">
+            <label for="s-single">Цветность <span class="slider-value" id="s-val-single">100</span>%</label>
+            <input type="range" id="s-single" min="0" max="200" value="100" />
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-download" id="btn-download-single">Скачать</button>
+          </div>
+          <div class="status-line" id="status-single"></div>
+        </section>
+      </div>
+
+      <!-- Вкладка: Папки -->
+      <div class="tab-pane" id="pane-batch">
       <p class="page-sub">Выберите <strong>папку-источник</strong> и <strong>папку-результат</strong>. При нажатии «Обработать» ИИ анализирует <strong>каждую фотографию отдельно</strong> и подбирает оптимальные параметры яркости, контраста и цветности для каждого снимка. Работает в Chrome и Edge (HTTPS).</p>
 
       <div class="folder-cards">
@@ -67,6 +120,8 @@
         <div class="status-line" id="status"></div>
       </section>
 
+      </div><!-- /pane-batch -->
+
       <section class="help-section" id="help">
         <h2 class="help-section-title">Справка</h2>
         <div class="help-block">
@@ -84,6 +139,10 @@
         <div class="help-block">
           <h3>Автоматический подбор (ИИ)</h3>
           <p>Параметры коррекции <strong>определяются автоматически на основе ИИ</strong>. «Авто (ИИ) — превью» подбирает по первому фото. «Обработать» анализирует каждое фото отдельно. Ползунки — для ручной корректировки.</p>
+        </div>
+        <div class="help-block">
+          <h3>Одно фото</h3>
+          <p>Вкладка «Одно фото» — для быстрой коррекции одного снимка. Загрузите или вставьте фото (Ctrl+V), настройте яркость, контраст и цветность. Блоки «До» и «После» показывают исходное фото и результат. «Авто (ИИ)» подбирает параметры автоматически.</p>
         </div>
         <div class="help-block">
           <h3>Папки</h3>
@@ -112,12 +171,129 @@
 
       document.getElementById('year').textContent = new Date().getFullYear();
 
+      /* Табы */
+      document.querySelectorAll('.tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var t = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('tab-active'); });
+          document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('tab-active'); });
+          btn.classList.add('tab-active');
+          document.getElementById('pane-' + t).classList.add('tab-active');
+        });
+      });
+
       function updateLabels() {
         bVal.textContent = b.value;
         cVal.textContent = c.value;
         sVal.textContent = s.value;
       }
       [b, c, s].forEach(function (el) { el.addEventListener('input', updateLabels); });
+
+      /* Вкладка "Одно фото" */
+      var singleOriginalImg = null, singleOriginalCanvas = null;
+      var bS = document.getElementById('b-single'), cS = document.getElementById('c-single'), sS = document.getElementById('s-single');
+      var bValS = document.getElementById('b-val-single'), cValS = document.getElementById('c-val-single'), sValS = document.getElementById('s-val-single');
+      var imgBefore = document.getElementById('img-before'), imgAfter = document.getElementById('img-after');
+      var statusSingle = document.getElementById('status-single');
+
+      function updateSingleLabels() {
+        bValS.textContent = bS.value;
+        cValS.textContent = cS.value;
+        sValS.textContent = sS.value;
+      }
+      [bS, cS, sS].forEach(function (el) { el.addEventListener('input', function () { updateSingleLabels(); applySinglePreview(); }); });
+
+      function applySinglePreview() {
+        if (!singleOriginalImg) return;
+        var w = singleOriginalImg.naturalWidth, h = singleOriginalImg.naturalHeight;
+        var filter = 'brightness(' + (bS.value / 100) + ') contrast(' + (cS.value / 100) + ') saturate(' + (sS.value / 100) + ')';
+        if (!singleOriginalCanvas) singleOriginalCanvas = document.createElement('canvas');
+        singleOriginalCanvas.width = w;
+        singleOriginalCanvas.height = h;
+        var ctx = singleOriginalCanvas.getContext('2d');
+        ctx.filter = filter;
+        ctx.drawImage(singleOriginalImg, 0, 0);
+        imgAfter.src = singleOriginalCanvas.toDataURL('image/png');
+        imgAfter.classList.add('preview-img-visible');
+      }
+
+      var singleBeforeUrl = null;
+      function loadSingleImage(file) {
+        if (!file || !file.type.match(/^image\//)) return;
+        if (singleBeforeUrl) URL.revokeObjectURL(singleBeforeUrl);
+        var url = URL.createObjectURL(file);
+        singleBeforeUrl = url;
+        var img = new Image();
+        img.onload = function () {
+          singleOriginalImg = img;
+          document.getElementById('ph-before').style.display = 'none';
+          document.getElementById('ph-after').style.display = 'none';
+          imgBefore.src = url;
+          imgBefore.classList.add('preview-img-visible');
+          applySinglePreview();
+          statusSingle.textContent = 'Готово. Настройте параметры или нажмите «Авто (ИИ)».';
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); singleBeforeUrl = null; statusSingle.textContent = 'Не удалось загрузить фото.'; };
+        img.src = url;
+      }
+
+      document.getElementById('dropzone-single').addEventListener('click', function () { document.getElementById('file-single').click(); });
+      document.getElementById('file-single').addEventListener('change', function () {
+        var f = this.files[0];
+        if (f) loadSingleImage(f);
+        this.value = '';
+      });
+      document.getElementById('dropzone-single').addEventListener('dragover', function (e) { e.preventDefault(); this.classList.add('dropzone-active'); });
+      document.getElementById('dropzone-single').addEventListener('dragleave', function () { this.classList.remove('dropzone-active'); });
+      document.getElementById('dropzone-single').addEventListener('drop', function (e) {
+        e.preventDefault();
+        this.classList.remove('dropzone-active');
+        var f = e.dataTransfer.files[0];
+        if (f) loadSingleImage(f);
+      });
+      document.addEventListener('paste', function (e) {
+        if (!document.getElementById('pane-single').classList.contains('tab-active')) return;
+        var dt = e.clipboardData;
+        if (!dt) return;
+        var file = dt.files && dt.files[0];
+        if (!file && dt.items) {
+          for (var i = 0; i < dt.items.length; i++) {
+            if (dt.items[i].type.indexOf('image') !== -1) {
+              file = dt.items[i].getAsFile();
+              break;
+            }
+          }
+        }
+        if (file) { e.preventDefault(); loadSingleImage(file); }
+      });
+
+      document.getElementById('btn-auto-single').addEventListener('click', function () {
+        if (!singleOriginalImg) { statusSingle.textContent = 'Сначала загрузите фото.'; return; }
+        var canvas = document.createElement('canvas');
+        var w = singleOriginalImg.naturalWidth, h = singleOriginalImg.naturalHeight;
+        var sample = 120, scale = Math.min(1, sample / Math.max(w, h));
+        canvas.width = Math.max(1, Math.floor(w * scale));
+        canvas.height = Math.max(1, Math.floor(h * scale));
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(singleOriginalImg, 0, 0, canvas.width, canvas.height);
+        var params = analyzeImage(ctx, canvas.width, canvas.height);
+        bS.value = params.b; cS.value = params.c; sS.value = params.s;
+        updateSingleLabels();
+        applySinglePreview();
+        statusSingle.textContent = 'ИИ: яркость ' + params.b + '%, контраст ' + params.c + '%, цветность ' + params.s + '%';
+      });
+
+      document.getElementById('btn-download-single').addEventListener('click', function () {
+        if (!singleOriginalCanvas) { statusSingle.textContent = 'Сначала загрузите фото.'; return; }
+        singleOriginalCanvas.toBlob(function (blob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'korrekciya-foto.png';
+          a.click();
+          URL.revokeObjectURL(a.href);
+          statusSingle.textContent = 'Скачано.';
+        }, 'image/png');
+      });
 
       if (!('showDirectoryPicker' in window)) {
         document.getElementById('btn-src').disabled = true;
