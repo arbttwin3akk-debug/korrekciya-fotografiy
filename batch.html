@@ -34,7 +34,7 @@
 
       <!-- Вкладка: Одно фото -->
       <div class="tab-pane tab-active" id="pane-single">
-        <p class="page-sub">Вставьте или загрузите одно фото, настройте параметры и сразу увидите результат «до» и «после».</p>
+        <p class="page-sub">Вставьте или загрузите одно фото, настройте параметры. Перетащите ползунок на фото влево/вправо, чтобы сравнить до и после.</p>
         <div class="single-upload">
           <div class="dropzone dropzone-single" id="dropzone-single">
             <span class="dropzone-icon">📷</span>
@@ -43,14 +43,16 @@
             <input type="file" id="file-single" accept="image/jpeg,image/png,image/webp,image/bmp" hidden />
           </div>
         </div>
-        <div class="before-after-wrap">
-          <div class="before-after-box">
-            <span class="before-after-label before-label">До</span>
-            <div class="preview-frame preview-before"><span class="preview-placeholder" id="ph-before">Загрузите фото</span><img id="img-before" alt="До" /></div>
+        <div class="compare-wrap" id="compare-wrap">
+          <span class="compare-placeholder" id="ph-compare">Загрузите фото</span>
+          <div class="compare-container" id="compare-container">
+            <img class="compare-img compare-after" id="img-after" alt="После" />
+            <img class="compare-img compare-before" id="img-before" alt="До" />
+            <div class="compare-handle" id="compare-handle"></div>
           </div>
-          <div class="before-after-box">
-            <span class="before-after-label after-label">После</span>
-            <div class="preview-frame preview-after"><span class="preview-placeholder" id="ph-after">—</span><img id="img-after" alt="После" /></div>
+          <div class="compare-labels">
+            <span>До</span>
+            <span>После</span>
           </div>
         </div>
         <section class="params params-single">
@@ -142,7 +144,7 @@
         </div>
         <div class="help-block">
           <h3>Одно фото</h3>
-          <p>Вкладка «Одно фото» — для быстрой коррекции одного снимка. Загрузите или вставьте фото (Ctrl+V), настройте яркость, контраст и цветность. Блоки «До» и «После» показывают исходное фото и результат. «Авто (ИИ)» подбирает параметры автоматически.</p>
+          <p>Вкладка «Одно фото» — для быстрой коррекции одного снимка. Загрузите или вставьте фото (Ctrl+V), настройте параметры. <strong>Перетащите ползунок на фото влево/вправо</strong> — слева будет «до», справа «после». «Авто (ИИ)» подбирает параметры автоматически.</p>
         </div>
         <div class="help-block">
           <h3>Папки</h3>
@@ -214,7 +216,6 @@
         ctx.filter = filter;
         ctx.drawImage(singleOriginalImg, 0, 0);
         imgAfter.src = singleOriginalCanvas.toDataURL('image/png');
-        imgAfter.classList.add('preview-img-visible');
       }
 
       var singleBeforeUrl = null;
@@ -226,16 +227,55 @@
         var img = new Image();
         img.onload = function () {
           singleOriginalImg = img;
-          document.getElementById('ph-before').style.display = 'none';
-          document.getElementById('ph-after').style.display = 'none';
+          document.getElementById('compare-wrap').classList.add('has-image');
           imgBefore.src = url;
-          imgBefore.classList.add('preview-img-visible');
           applySinglePreview();
-          statusSingle.textContent = 'Готово. Настройте параметры или нажмите «Авто (ИИ)».';
+          updateCompareSlider(50);
+          statusSingle.textContent = 'Готово. Перетащите ползунок влево/вправо. Настройте параметры или нажмите «Авто (ИИ)».';
         };
         img.onerror = function () { URL.revokeObjectURL(url); singleBeforeUrl = null; statusSingle.textContent = 'Не удалось загрузить фото.'; };
         img.src = url;
       }
+
+      var comparePos = 50;
+      function updateCompareSlider(pct) {
+        comparePos = Math.max(0, Math.min(100, pct));
+        var h = document.getElementById('compare-handle');
+        var clip = document.getElementById('img-before');
+        h.style.left = comparePos + '%';
+        clip.style.clipPath = 'inset(0 ' + (100 - comparePos) + '% 0 0)';
+      }
+
+      (function initCompareDrag() {
+        var handle = document.getElementById('compare-handle');
+        var container = document.getElementById('compare-container');
+        var dragging = false;
+        function move(e) {
+          if (!container || !container.offsetParent) return;
+          var rect = container.getBoundingClientRect();
+          var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+          var pct = (x / rect.width) * 100;
+          updateCompareSlider(pct);
+        }
+        handle.addEventListener('mousedown', function (e) { e.preventDefault(); dragging = true; });
+        container.addEventListener('mousedown', function (e) {
+          if (e.target === handle) return;
+          dragging = true;
+          var rect = container.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          updateCompareSlider((x / rect.width) * 100);
+        });
+        document.addEventListener('mousemove', function (e) { if (dragging) move(e); });
+        document.addEventListener('mouseup', function () { dragging = false; });
+        handle.addEventListener('touchstart', function (e) { e.preventDefault(); dragging = true; move(e); }, { passive: false });
+        container.addEventListener('touchstart', function (e) {
+          if (e.target === handle || dragging) return;
+          dragging = true;
+          move(e);
+        });
+        document.addEventListener('touchmove', function (e) { if (dragging) { e.preventDefault(); move(e); } }, { passive: false });
+        document.addEventListener('touchend', function () { dragging = false; });
+      })();
 
       document.getElementById('dropzone-single').addEventListener('click', function () { document.getElementById('file-single').click(); });
       document.getElementById('file-single').addEventListener('change', function () {

@@ -141,72 +141,130 @@ body {
   display: block;
 }
 
-/* Одно фото: до/после */
+/* Одно фото: ползунок до/после на фото */
 .single-upload {
   margin-bottom: 1.5rem;
 }
 
-.before-after-wrap {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.before-after-box {
+.compare-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
   box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.before-after-label {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-}
-
-.before-label {
-  background: #e4e6eb;
-  color: var(--muted);
-}
-
-.after-label {
-  background: rgba(24, 119, 242, 0.15);
-  color: var(--primary);
-}
-
-.preview-before,
-.preview-after {
-  min-height: 120px;
+  margin-bottom: 1.5rem;
+  min-height: 200px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
 }
 
-.preview-before img,
-.preview-after img {
-  max-width: 100%;
-  max-height: 200px;
-  object-fit: contain;
-}
-
-.preview-frame .preview-placeholder {
-  display: block;
+.compare-placeholder {
   color: var(--muted);
-  font-size: 0.875rem;
-  padding: 2rem;
-  text-align: center;
+  font-size: 0.9375rem;
 }
 
-.preview-frame img:not(.preview-img-visible) {
+.compare-wrap.has-image .compare-placeholder {
   display: none;
+}
+
+.compare-container {
+  display: none;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--bg);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.compare-container .compare-img {
+  display: block;
+}
+
+.compare-wrap.has-image .compare-container {
+  display: block;
+}
+
+.compare-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+.compare-after {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+  z-index: 0;
+}
+
+.compare-before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left top;
+  z-index: 1;
+  clip-path: inset(0 50% 0 0);
+}
+
+.compare-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  margin-left: -2px;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(0,0,0,0.5);
+  cursor: ew-resize;
+  z-index: 2;
+  touch-action: none;
+}
+
+.compare-handle::before {
+  content: "◀";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.compare-handle::after {
+  content: "▶";
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.compare-labels {
+  display: none;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  gap: 1rem;
+}
+
+.compare-wrap.has-image .compare-labels {
+  display: flex;
+  gap: 1rem;
 }
 
 .params-single {
